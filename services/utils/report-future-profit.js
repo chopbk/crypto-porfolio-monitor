@@ -26,7 +26,7 @@ const reportFutureProfit = async (futuresApis) => {
         if (profits.code) {
           return;
         }
-        let newIncome = profits; //.filter(filter);
+        let newIncome = profits.filter(filter);
 
         let dayProfit = 0;
         for (var i = 0, _len = newIncome.length; i < _len; i++) {

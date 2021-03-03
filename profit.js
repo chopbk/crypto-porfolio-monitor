@@ -13,7 +13,7 @@ const getFuturesProfit = async (futuresApis, telegramBot) => {
   console.log("GET FUTURES PROFIT");
   let msg = await reportFutureProfit(futuresApis);
   console.log(msg);
-  telegramBot.sendReport(msg, "-1001497467742");
+  telegramBot.sendReport(msg, "-1001348705247");
 };
 const createBinanceFuturesApi = (configs) => {
   let futuresApis = {};
@@ -71,13 +71,13 @@ let userAccountConfigs = {};
       for (const [key, value] of Object.entries(params)) {
         params[key] = value.toLowerCase();
       }
-      if (commandParameter[0] == "profit") console.log(params);
-      if (!!params.user) {
-        await getFuturesProfit(futuresApis[params.user], telegramBot);
-      } else {
-        reportAllProfit();
+      if (commandParameter[0] == "profit") {
+        if (!!params.user) {
+          await getFuturesProfit(futuresApis[params.user], telegramBot);
+        } else {
+          reportAllProfit();
+        }
       }
-
       //responseCommand = await getFuturesProfit(params);
     });
     // maybe get more speed
