@@ -47,7 +47,7 @@ const createBinanceFuturesApi = (configs) => {
   });
   return futuresApis;
 };
-let usernames = ["my", "an"];
+let username = "chopbk";
 let allTikers = {};
 let exchangeIds = [];
 let userExchanges = {};
@@ -58,12 +58,8 @@ let futuresApis = {};
     await require("./loader/database.loader")();
     let telegramBot = await telegramBotLoader("report");
     let userAccountConfigs = await loadAccountConfig([username]);
-    usernames.map((username) => {
-      userExchanges[username] = createCcxtExchange(
-        userAccountConfigs[username]
-      );
-    });
 
+    userExchanges = createCcxtExchange(userAccountConfigs[username]);
     futuresApis = createBinanceFuturesApi(userAccountConfigs[username]);
     //find name of exchange
     _.map(userExchanges, async (value, key) => {
@@ -94,9 +90,9 @@ let futuresApis = {};
     };
     // await getBalance();
     // await getFuturesProfit();
-    const job = schedule.scheduleJob("* /12 * * *", getBalance);
+    const job = schedule.scheduleJob("0 /2 * * *", getBalance);
     const job2 = schedule.scheduleJob("0 */2 * * *", getFuturesProfit);
-    const job3 = schedule.scheduleJob("58 6 * * *", getFuturesProfit);
+    const job3 = schedule.scheduleJob("55 6 * * *", getFuturesProfit);
     telegramBot.bot.on("message", async (msg) => {
       let messageText = msg.text || msg.caption;
       if (!messageText) return;
