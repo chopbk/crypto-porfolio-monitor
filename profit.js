@@ -58,7 +58,8 @@ let userAccountConfigs = {};
         await getFuturesProfit(futuresApis[username], telegramBot);
       });
     };
-    const job3 = schedule.scheduleJob("58 6 * * *", reportAllProfit);
+    const job1 = schedule.scheduleJob("55 23 * * *", reportAllProfit);
+    const job2 = schedule.scheduleJob("0 */12 * * *", reportAllProfit);
 
     telegramBot.bot.on("message", async (msg) => {
       let messageText = msg.text || msg.caption;
