@@ -16,7 +16,6 @@ const reportBalance = async (exchanges, allTikers) => {
     mxc: 1000,
     trust: 1000,
     pool: 1000,
-    binancePool: 2000,
   };
   // calculate total spot balance
   _.map(anotherBalances, (balance) => {

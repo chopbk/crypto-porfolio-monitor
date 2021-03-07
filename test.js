@@ -10,7 +10,8 @@ const telegramBotLoader = require("./loader/telegram.loader");
 const reportFutureProfit = require("./services/utils/report-future-profit");
 
 const getFuturesProfit = async (futuresApis, telegramBot, params = {}) => {
-  console.log("GET FUTURES PROFIT");
+  console.log(`GET FUTURES PROFIT ${params}`);
+  console.log(params);
   let msg = await reportFutureProfit(futuresApis, params);
   console.log(msg);
   telegramBot.sendReport(msg, "-1001348705247");
@@ -45,7 +46,7 @@ let userAccountConfigs = {};
 (async () => {
   try {
     await require("./loader/database.loader")();
-    let telegramBot = await telegramBotLoader("profit");
+    let telegramBot = await telegramBotLoader("test");
 
     userAccountConfigs = await loadAccountConfig(usernames);
     usernames.map((username) => {
@@ -53,14 +54,13 @@ let userAccountConfigs = {};
         userAccountConfigs[username]
       );
     });
-    const reportAllProfit = async () => {
+    const reportAllProfit = async (params) => {
       usernames.forEach(async (username) => {
-        await getFuturesProfit(futuresApis[username], telegramBot);
+        await getFuturesProfit(futuresApis[username], telegramBot, params);
       });
     };
-    const job1 = schedule.scheduleJob("56 23 * * *", reportAllProfit);
-    const job2 = schedule.scheduleJob("0 7 * * *", reportAllProfit);
-
+    const job1 = schedule.scheduleJob("55 23 * * *", reportAllProfit);
+    const job2 = schedule.scheduleJob("0 */12 * * *", reportAllProfit);
     telegramBot.bot.on("message", async (msg) => {
       let messageText = msg.text || msg.caption;
       if (!messageText || !messageText.startsWith("/")) return;
@@ -76,7 +76,7 @@ let userAccountConfigs = {};
         if (!!params.user) {
           await getFuturesProfit(futuresApis[params.user], telegramBot, params);
         } else {
-          reportAllProfit();
+          reportAllProfit(params);
         }
       }
       //responseCommand = await getFuturesProfit(params);

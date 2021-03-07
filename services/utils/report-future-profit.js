@@ -7,42 +7,99 @@ let filter = (profit) =>
   profit.incomeType == "COMMISSION_REBATE";
 const { sleep } = require("./helper");
 const MongoDb = require("./../database/mongodb");
-const reportFutureProfit = async (futuresApis) => {
+const reportFutureProfit = async (futuresApis, params = {}) => {
   let FuturesProfitModel = MongoDb.getFuturesProfitModel();
   let responseCommand;
   let totalProfits = {};
   let now = new Date();
   var d = new Date();
-  let today = d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
-  let dayStart = new Date(today);
+  let todayString =
+    d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
+  if (!params.start) {
+    params.start = todayString;
+  }
+
   await Promise.all(
     _.map(futuresApis, async (futuresClient, key) => {
+      console.log(key);
+      let dayStart = new Date(params.start);
+      let dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+      let end = !params.end ? new Date() : new Date(params.end);
       try {
-        let profits = await futuresClient.futuresIncome({
-          startTime: dayStart.getTime(),
-          limit: 1000,
-        });
-        await sleep(200);
-        if (profits.code) {
-          return;
-        }
-        let newIncome = profits.filter(filter);
-
+        let accProfit = 0;
         let dayProfit = 0;
-        for (var i = 0, _len = newIncome.length; i < _len; i++) {
-          dayProfit += parseFloat(newIncome[i].income);
-        }
-        totalProfits[key] = dayProfit;
-        await FuturesProfitModel.findOneAndUpdate(
-          { env: key, day: dayStart },
-          {
-            env: key,
-            day: dayStart,
-            profit: parseFloat(dayProfit.toFixed(3)),
-            status: dayProfit < 0 ? "LOSE" : dayProfit > 0 ? "WIN" : "DRAW",
-          },
-          { upsert: true }
-        );
+        let dayProfitDbs = await FuturesProfitModel.find({
+          env: key,
+          day: { $gte: dayStart.toLocaleDateString() },
+        });
+        console.log(dayProfitDbs);
+        do {
+          let today = new Date(todayString);
+          let dayProfitDb = dayProfitDbs.find(
+            (profit) => profit.day.valueOf() === dayStart.valueOf()
+          );
+          if (today.valueOf() === dayStart.valueOf()) dayProfitDb = false;
+          console.log(dayProfitDb);
+          if (!dayProfitDb) {
+            dayProfit = 0;
+            let profits = await futuresClient.futuresIncome({
+              startTime: dayStart.getTime(),
+              endTime: dayEnd.getTime(),
+              limit: 1000,
+            });
+            if (profits.code) {
+              responseCommand = profits;
+              return responseCommand;
+            }
+            let newIncome = profits.filter(filter);
+
+            for (var i = 0, _len = newIncome.length; i < _len; i++) {
+              //console.log(this[i][prop]);
+              dayProfit += parseFloat(newIncome[i].income);
+            }
+            await FuturesProfitModel.findOneAndUpdate(
+              { env: this.env, day: dayStart },
+              {
+                env: this.env,
+                day: dayStart,
+                profit: parseFloat(dayProfit.toFixed(3)),
+                status: dayProfit < 0 ? "LOSE" : dayProfit > 0 ? "WIN" : "DRAW",
+              },
+              { upsert: true }
+            );
+            await sleep(200);
+          } else {
+            dayProfit = dayProfitDb.profit;
+          }
+          accProfit += dayProfit;
+          dayStart = dayEnd;
+          dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+        } while (dayStart <= end);
+        // let profits = await futuresClient.futuresIncome({
+        //   startTime: dayStart.getTime(),
+        //   limit: 1000,
+        // });
+        // await sleep(200);
+        // if (profits.code) {
+        //   return;
+        // }
+        // let newIncome = profits.filter(filter);
+
+        // let dayProfit = 0;
+        // for (var i = 0, _len = newIncome.length; i < _len; i++) {
+        //   dayProfit += parseFloat(newIncome[i].income);
+        // }
+        totalProfits[key] = accProfit;
+        // await FuturesProfitModel.findOneAndUpdate(
+        //   { env: key, day: dayStart },
+        //   {
+        //     env: key,
+        //     day: dayStart,
+        //     profit: parseFloat(dayProfit.toFixed(3)),
+        //     status: dayProfit < 0 ? "LOSE" : dayProfit > 0 ? "WIN" : "DRAW",
+        //   },
+        //   { upsert: true }
+        // );
       } catch (error) {
         console.log(error);
       }
@@ -63,9 +120,9 @@ const reportFutureProfit = async (futuresApis) => {
   });
   let profit = JSON.stringify(totalProfits, null, 2);
   responseCommand = `Thời gian: ${now.toLocaleTimeString()} ${now.toLocaleDateString()}`;
-  responseCommand += `\nTổng lãi/lỗ ngày ${today}: ${totalProfit.toFixed(
-    3
-  )}USDT `;
+  responseCommand += `\nTổng lãi/lỗ từ ngày ${
+    params.start
+  }: ${totalProfit.toFixed(3)}USDT `;
   responseCommand += `\n${profit}`;
   return responseCommand;
 };
