@@ -32,14 +32,12 @@ const reportFutureProfit = async (futuresApis, params = {}) => {
           env: key,
           day: { $gte: dayStart.toLocaleDateString() },
         });
-        console.log(dayProfitDbs);
         do {
           let today = new Date(todayString);
           let dayProfitDb = dayProfitDbs.find(
             (profit) => profit.day.valueOf() === dayStart.valueOf()
           );
           if (today.valueOf() === dayStart.valueOf()) dayProfitDb = false;
-          console.log(dayProfitDb);
           if (!dayProfitDb) {
             dayProfit = 0;
             let profits = await futuresClient.futuresIncome({

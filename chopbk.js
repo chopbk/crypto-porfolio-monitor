@@ -82,9 +82,10 @@ let futuresApis = {};
       console.log(msg);
       telegramBot.sendReport(msg, "-1001497467742");
     };
-    const getFuturesProfit = async () => {
+    const getFuturesProfit = async (params) => {
       console.log("GET FUTURES PROFIT");
-      let msg = await reportFutureProfit(futuresApis);
+      console.log(params);
+      let msg = await reportFutureProfit(futuresApis, params);
       console.log(msg);
       telegramBot.sendReport(msg, "-1001497467742");
     };
@@ -96,20 +97,36 @@ let futuresApis = {};
     telegramBot.bot.on("message", async (msg) => {
       let messageText = msg.text || msg.caption;
       if (!messageText) return;
-      if (messageText == "balance") {
+      messageText = messageText.toLowerCase();
+      let commandParameter = messageText.split("?").join(" ").split(" ");
+      const params = Object.fromEntries(
+        new URLSearchParams(commandParameter[1])
+      );
+      for (const [key, value] of Object.entries(params)) {
+        params[key] = value.toLowerCase();
+      }
+      if (commandParameter[0] == "balance") {
         getBalance().catch((error) => {});
-      } else if (messageText == "profit") {
-        getFuturesProfit().catch((error) => {});
+      } else if (commandParameter[0] == "profit") {
+        getFuturesProfit(params).catch((error) => {});
       }
     });
     // maybe get more speed
     telegramBot.bot.on("channel_post", async (msg) => {
       let messageText = msg.text || msg.caption;
       if (!messageText) return;
-      if (messageText == "balance") {
+      messageText = messageText.toLowerCase();
+      let commandParameter = messageText.split("?").join(" ").split(" ");
+      const params = Object.fromEntries(
+        new URLSearchParams(commandParameter[1])
+      );
+      for (const [key, value] of Object.entries(params)) {
+        params[key] = value.toLowerCase();
+      }
+      if (commandParameter[0] == "balance") {
         getBalance().catch((error) => {});
-      } else if (messageText == "profit") {
-        getFuturesProfit().catch((error) => {});
+      } else if (commandParameter[0] == "profit") {
+        getFuturesProfit(params).catch((error) => {});
       }
     });
   } catch (error) {
