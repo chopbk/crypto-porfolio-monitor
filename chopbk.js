@@ -93,7 +93,7 @@ let futuresApis = {};
     // await getFuturesProfit();
     const job = schedule.scheduleJob("0 */8 * * *", getBalance);
     const job2 = schedule.scheduleJob("0 */2 * * *", getFuturesProfit);
-    const job3 = schedule.scheduleJob("55 23 * * *", getFuturesProfit);
+    const job3 = schedule.scheduleJob("59 23 * * *", getFuturesProfit);
     telegramBot.bot.on("message", async (msg) => {
       let messageText = msg.text || msg.caption;
       if (!messageText) return;

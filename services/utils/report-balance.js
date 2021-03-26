@@ -12,15 +12,16 @@ const reportBalance = async (exchanges, allTikers) => {
   let msg = `Thời gian: ${now.toLocaleTimeString()} ${now.toLocaleDateString()}`;
   let spotBalanceInfo = await calculateSpotBalances(exchanges, allTikers);
   let anotherBalances = {
-    metamask: 1600,
-    mxc: 1000,
-    trust: 1000,
-    pool: 1000,
+    metamask: 2500,
+    mxc: 1300,
+    trust: 1700,
+    pool:4600,
+binance1: 12000,
+	binance2:  2750
   };
   // calculate total spot balance
   _.map(anotherBalances, (balance) => {
-    spotBalanceInfo.balance += balance;
-  });
+    spotBalanceInfo.balance += balance;  });
   console.log(spotBalanceInfo);
   msg += "\nSpot";
   msg += msg += JSON.stringify(spotBalanceInfo.balances, null, 2);

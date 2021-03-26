@@ -33,11 +33,13 @@ let usernames = [
   "an",
   "hai",
   "thuyen",
+"tam",
   "dan",
   "na",
   "hoan",
   "thao",
-  "tan",
+"tan",
+"chien"
 ];
 let futuresApis = {};
 
@@ -58,7 +60,7 @@ let userAccountConfigs = {};
         await getFuturesProfit(futuresApis[username], telegramBot);
       });
     };
-    const job1 = schedule.scheduleJob("56 23 * * *", reportAllProfit);
+    const job1 = schedule.scheduleJob("59 23 * * *", reportAllProfit);
     const job2 = schedule.scheduleJob("0 7 * * *", reportAllProfit);
 
     telegramBot.bot.on("message", async (msg) => {
