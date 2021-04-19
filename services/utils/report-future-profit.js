@@ -49,6 +49,16 @@ const reportFutureProfit = async (futuresApis, params = {}) => {
               responseCommand = profits;
               return responseCommand;
             }
+            let length = profits.length;
+          while (length === 1000) {
+            let temp = await futuresClient.futuresIncome({
+                startTime: profits[profits.length - 1].time,
+                endTime: dayEnd.getTime(),
+                limit: 1000,
+            });
+            length = temp.length;
+            profits = profits.concat(temp);
+        }
             let newIncome = profits.filter(filter);
 
             for (var i = 0, _len = newIncome.length; i < _len; i++) {
