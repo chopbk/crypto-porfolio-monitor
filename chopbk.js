@@ -11,6 +11,7 @@ const telegramBotLoader = require("./loader/telegram.loader");
 const reportBalance = require("./services/utils/report-balance");
 const reportFutureProfit = require("./services/utils/report-future-profit");
 const { error } = require("winston");
+const { isBuffer } = require("lodash");
 
 const getExchangeById = (exchangeId, exchanges) => {
   let accountName = _.findKey(exchanges, { id: exchangeId });
@@ -82,12 +83,11 @@ let futuresApis = {};
       console.log(msg);
       telegramBot.sendReport(msg, "-1001497467742");
     };
-    const getFuturesProfit = async (params) => {
+    const getFuturesProfit = async (params, cmd = false) => {
       console.log("GET FUTURES PROFIT");
-      console.log(params);
       let msg = await reportFutureProfit(futuresApis, params);
-      console.log(msg);
-      telegramBot.sendReport(msg, "-1001497467742");
+      if (cmd) telegramBot.sendReportCommand(msg, cmd);
+      else telegramBot.sendReport(msg, "-1001497467742");
     };
     // await getBalance();
     // await getFuturesProfit();
@@ -124,9 +124,9 @@ let futuresApis = {};
         params[key] = value.toLowerCase();
       }
       if (commandParameter[0] == "balance") {
-        getBalance().catch((error) => {});
+        getBalance(msg).catch((error) => {});
       } else if (commandParameter[0] == "profit") {
-        getFuturesProfit(params).catch((error) => {});
+        getFuturesProfit(params, msg).catch((error) => {});
       }
     });
   } catch (error) {

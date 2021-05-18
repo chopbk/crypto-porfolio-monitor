@@ -3,17 +3,23 @@ const _ = require("lodash");
 const schedule = require("node-schedule");
 // load config from .env files
 const dotenv = require("dotenv");
+const { sleep } = require("./services/utils/helper");
 dotenv.config();
 
 const loadAccountConfig = require("./loader/account-config.loader");
 const telegramBotLoader = require("./loader/telegram.loader");
 const reportFutureProfit = require("./services/utils/report-future-profit");
 
-const getFuturesProfit = async (futuresApis, telegramBot, params = {}) => {
-  console.log("GET FUTURES PROFIT");
+const getFuturesProfit = async (
+  futuresApis,
+  telegramBot,
+  params = {},
+  cmd = false
+) => {
   let msg = await reportFutureProfit(futuresApis, params);
-  console.log(msg);
-  telegramBot.sendReport(msg, "-1001348705247");
+  if (params.user === "all") telegramBot.sendReport(msg, cmd.chat.id);
+  else if (cmd) telegramBot.sendReportCommand(msg, cmd);
+  else telegramBot.sendReport(msg, "-1001348705247");
 };
 const createBinanceFuturesApi = (configs) => {
   let futuresApis = {};
@@ -33,13 +39,13 @@ let usernames = [
   "an",
   "hai",
   "thuyen",
-"tam",
+  "tam",
   "dan",
   "na",
   "hoan",
   "thao",
-"tan",
-"chien"
+  "tan",
+  "chien",
 ];
 let futuresApis = {};
 
@@ -55,8 +61,15 @@ let userAccountConfigs = {};
         userAccountConfigs[username]
       );
     });
-    const reportAllProfit = async () => {
+    const reportAllProfit = async (params, msg) => {
       usernames.forEach(async (username) => {
+        await sleep(2000);
+        await getFuturesProfit(futuresApis[username], telegramBot, params, msg);
+      });
+    };
+    const reportSchedule = async (params, msg) => {
+      usernames.forEach(async (username) => {
+        await sleep(1000);
         await getFuturesProfit(futuresApis[username], telegramBot);
       });
     };
@@ -76,9 +89,14 @@ let userAccountConfigs = {};
       }
       if (commandParameter[0] == "profit") {
         if (!!params.user) {
-          await getFuturesProfit(futuresApis[params.user], telegramBot, params);
-        } else {
-          reportAllProfit();
+          if (params.user === "all") reportAllProfit(params, msg);
+          else
+            await getFuturesProfit(
+              futuresApis[params.user],
+              telegramBot,
+              params,
+              msg
+            );
         }
       }
       //responseCommand = await getFuturesProfit(params);
@@ -88,7 +106,7 @@ let userAccountConfigs = {};
       let messageText = msg.text || msg.caption;
       if (!messageText) return;
       if (messageText == "profit") {
-        getFuturesProfit().catch((error) => {});
+        getFuturesProfit(msg).catch((error) => {});
       }
     });
   } catch (error) {

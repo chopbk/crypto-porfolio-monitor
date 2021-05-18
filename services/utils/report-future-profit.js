@@ -11,6 +11,7 @@ const reportFutureProfit = async (futuresApis, params = {}) => {
   let FuturesProfitModel = MongoDb.getFuturesProfitModel();
   let responseCommand;
   let totalProfits = {};
+  let balances = {};
   let now = new Date();
   var d = new Date();
   let todayString =
@@ -21,11 +22,14 @@ const reportFutureProfit = async (futuresApis, params = {}) => {
 
   await Promise.all(
     _.map(futuresApis, async (futuresClient, key) => {
-      console.log(key);
       let dayStart = new Date(params.start);
       let dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
       let end = !params.end ? new Date() : new Date(params.end);
+
       try {
+        let accountBalances = await futuresClient.futuresBalance();
+        accountBalance = accountBalances.find((b) => b.asset == "USDT");
+        let balance = parseFloat(accountBalance.balance).toFixed(2);
         let accProfit = 0;
         let dayProfit = 0;
         let dayProfitDbs = await FuturesProfitModel.find({
@@ -50,15 +54,15 @@ const reportFutureProfit = async (futuresApis, params = {}) => {
               return responseCommand;
             }
             let length = profits.length;
-          while (length === 1000) {
-            let temp = await futuresClient.futuresIncome({
+            while (length === 1000) {
+              let temp = await futuresClient.futuresIncome({
                 startTime: profits[profits.length - 1].time,
                 endTime: dayEnd.getTime(),
                 limit: 1000,
-            });
-            length = temp.length;
-            profits = profits.concat(temp);
-        }
+              });
+              length = temp.length;
+              profits = profits.concat(temp);
+            }
             let newIncome = profits.filter(filter);
 
             for (var i = 0, _len = newIncome.length; i < _len; i++) {
@@ -83,31 +87,8 @@ const reportFutureProfit = async (futuresApis, params = {}) => {
           dayStart = dayEnd;
           dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
         } while (dayStart <= end);
-        // let profits = await futuresClient.futuresIncome({
-        //   startTime: dayStart.getTime(),
-        //   limit: 1000,
-        // });
-        // await sleep(200);
-        // if (profits.code) {
-        //   return;
-        // }
-        // let newIncome = profits.filter(filter);
-
-        // let dayProfit = 0;
-        // for (var i = 0, _len = newIncome.length; i < _len; i++) {
-        //   dayProfit += parseFloat(newIncome[i].income);
-        // }
         totalProfits[key] = accProfit;
-        // await FuturesProfitModel.findOneAndUpdate(
-        //   { env: key, day: dayStart },
-        //   {
-        //     env: key,
-        //     day: dayStart,
-        //     profit: parseFloat(dayProfit.toFixed(3)),
-        //     status: dayProfit < 0 ? "LOSE" : dayProfit > 0 ? "WIN" : "DRAW",
-        //   },
-        //   { upsert: true }
-        // );
+        balances[key] = balance;
       } catch (error) {
         console.log(error);
       }
@@ -124,8 +105,10 @@ const reportFutureProfit = async (futuresApis, params = {}) => {
     totalProfit += profit;
   });
   _.map(totalProfits, (profit, key) => {
-    totalProfits[key] = profit.toFixed(1) + " USDT";
+    totalProfits[key] =
+      profit.toFixed(1) + " USDT" + " - " + balances[key] + "USDT";
   });
+
   let profit = JSON.stringify(totalProfits, null, 2);
   responseCommand = `Thời gian: ${now.toLocaleTimeString()} ${now.toLocaleDateString()}`;
   responseCommand += `\nTổng lãi/lỗ từ ngày ${

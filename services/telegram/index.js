@@ -11,8 +11,8 @@ class TeleBot {
     return;
   }
   sendReportCommand(message, cmdInfo) {
-    this.bot.sendMessage(cmdInfo.chatId, message, {
-      reply_to_message_id: cmdInfo.msgId,
+    this.bot.sendMessage(cmdInfo.chat.id, message, {
+      reply_to_message_id: cmdInfo.message_id,
     });
     return;
   }
