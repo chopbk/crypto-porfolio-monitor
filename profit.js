@@ -3,7 +3,13 @@ const _ = require("lodash");
 const schedule = require("node-schedule");
 // load config from .env files
 const dotenv = require("dotenv");
-const { sleep } = require("./services/utils/helper");
+function sleep(t, val) {
+  return new Promise(function (resolve) {
+    setTimeout(function () {
+      resolve(val);
+    }, t);
+  });
+}
 dotenv.config();
 
 const loadAccountConfig = require("./loader/account-config.loader");
@@ -45,6 +51,7 @@ let usernames = [
   "hoan",
   "thao",
   "tan",
+  "binh",
   "chien",
 ];
 let futuresApis = {};
@@ -62,16 +69,16 @@ let userAccountConfigs = {};
       );
     });
     const reportAllProfit = async (params, msg) => {
-      usernames.forEach(async (username) => {
-        await sleep(2000);
+      for (const username of usernames) {
         await getFuturesProfit(futuresApis[username], telegramBot, params, msg);
-      });
+        await sleep(500);
+      }
     };
     const reportSchedule = async (params, msg) => {
-      usernames.forEach(async (username) => {
-        await sleep(1000);
+      for (const username of usernames) {
         await getFuturesProfit(futuresApis[username], telegramBot);
-      });
+        await sleep(500);
+      }
     };
     const job1 = schedule.scheduleJob("59 23 * * *", reportAllProfit);
     const job2 = schedule.scheduleJob("0 7 * * *", reportAllProfit);
