@@ -1,11 +1,6 @@
 const _ = require("lodash");
-let filter = (profit) =>
-  profit.incomeType == "FUNDING_FEE" ||
-  profit.incomeType == "COMMISSION" ||
-  profit.incomeType == "REALIZED_PNL" ||
-  profit.incomeType == "REFERRAL_KICKBACK" ||
-  profit.incomeType == "COMMISSION_REBATE";
 const { sleep } = require("./helper");
+const { calculateFuturesProfit } = require("./futures-profit");
 const MongoDb = require("./../database/mongodb");
 const reportFutureProfit = async (futuresApis, params = {}) => {
   let FuturesProfitModel = MongoDb.getFuturesProfitModel();
@@ -21,7 +16,7 @@ const reportFutureProfit = async (futuresApis, params = {}) => {
   }
 
   await Promise.all(
-    _.map(futuresApis, async (futuresClient, key) => {
+    _.map(futuresApis, async (futuresClient, env) => {
       let dayStart = new Date(params.start);
       let dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
       let end = !params.end ? new Date() : new Date(params.end);
@@ -33,7 +28,7 @@ const reportFutureProfit = async (futuresApis, params = {}) => {
         let accProfit = 0;
         let dayProfit = 0;
         let dayProfitDbs = await FuturesProfitModel.find({
-          env: key,
+          env: env,
           day: { $gte: dayStart.toLocaleDateString() },
         });
         do {
@@ -43,43 +38,23 @@ const reportFutureProfit = async (futuresApis, params = {}) => {
           );
           if (today.valueOf() === dayStart.valueOf()) dayProfitDb = false;
           if (!dayProfitDb) {
-            dayProfit = 0;
-            let profits = await futuresClient.futuresIncome({
+            let params = {
               startTime: dayStart.getTime(),
               endTime: dayEnd.getTime(),
               limit: 1000,
-            });
-            if (profits.code) {
-              responseCommand = profits;
-              return responseCommand;
-            }
-            let length = profits.length;
-            while (length === 1000) {
-              let temp = await futuresClient.futuresIncome({
-                startTime: profits[profits.length - 1].time,
-                endTime: dayEnd.getTime(),
-                limit: 1000,
-              });
-              length = temp.length;
-              profits = profits.concat(temp);
-            }
-            let newIncome = profits.filter(filter);
-
-            for (var i = 0, _len = newIncome.length; i < _len; i++) {
-              //console.log(this[i][prop]);
-              dayProfit += parseFloat(newIncome[i].income);
-            }
+            };
+            profit = calculateFuturesProfit(futuresClient, params);
             await FuturesProfitModel.findOneAndUpdate(
-              { env: this.env, day: dayStart },
+              { env: env, day: dayStart },
               {
-                env: this.env,
+                env: env,
                 day: dayStart,
                 profit: parseFloat(dayProfit.toFixed(3)),
                 status: dayProfit < 0 ? "LOSE" : dayProfit > 0 ? "WIN" : "DRAW",
               },
               { upsert: true }
             );
-            await sleep(200);
+            await sleep(1000);
           } else {
             dayProfit = dayProfitDb.profit;
           }
@@ -87,8 +62,8 @@ const reportFutureProfit = async (futuresApis, params = {}) => {
           dayStart = dayEnd;
           dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
         } while (dayStart <= end);
-        totalProfits[key] = accProfit;
-        balances[key] = balance;
+        totalProfits[env] = accProfit;
+        balances[env] = balance;
       } catch (error) {
         console.log(error);
       }
