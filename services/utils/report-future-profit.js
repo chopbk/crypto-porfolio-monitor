@@ -32,6 +32,7 @@ const reportFutureProfit = async (futuresApis, params = {}) => {
           day: { $gte: dayStart.toLocaleDateString() },
         });
         do {
+          dayProfit = 0;
           let today = new Date(todayString);
           let dayProfitDb = dayProfitDbs.find(
             (profit) => profit.day.valueOf() === dayStart.valueOf()
@@ -43,7 +44,7 @@ const reportFutureProfit = async (futuresApis, params = {}) => {
               endTime: dayEnd.getTime(),
               limit: 1000,
             };
-            profit = calculateFuturesProfit(futuresClient, params);
+            dayProfit = await calculateFuturesProfit(futuresClient, params);
             await FuturesProfitModel.findOneAndUpdate(
               { env: env, day: dayStart },
               {
@@ -63,9 +64,10 @@ const reportFutureProfit = async (futuresApis, params = {}) => {
           dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
         } while (dayStart <= end);
         totalProfits[env] = accProfit;
+        accProfit = 0;
         balances[env] = balance;
       } catch (error) {
-        console.log(error);
+        console.log(error.message);
       }
     })
   );
@@ -88,7 +90,7 @@ const reportFutureProfit = async (futuresApis, params = {}) => {
   responseCommand = `Thời gian: ${now.toLocaleTimeString()} ${now.toLocaleDateString()}`;
   responseCommand += `\nTổng lãi/lỗ từ ngày ${
     params.start
-  }: ${totalProfit.toFixed(3)}USDT `;
+  }: ${totalProfit.toFixed(3)}USDT Đóng họ:  ${(totalProfit*0.1).toFixed(3)} (10%)`;
   responseCommand += `\n${profit}`;
   return responseCommand;
 };

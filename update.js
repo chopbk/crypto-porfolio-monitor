@@ -128,6 +128,5 @@ const updateAllProfit = async () => {
   }
 };
 (async () => {
-  await updateAllProfit();
   const job1 = schedule.scheduleJob("0 0 * * *", updateAllProfit);
 })();

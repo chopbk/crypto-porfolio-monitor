@@ -40,7 +40,7 @@ const createBinanceFuturesApi = (configs) => {
   });
   return futuresApis;
 };
-let usernames = ["manh", "linh", "zen", "tien", "trung", "qa", "hien", "can"];
+let usernames = ["manh", "linh", "zen", "tien", "trung", "qa", "hien", "can","bean"];
 let futuresApis = {};
 
 let userAccountConfigs = {};

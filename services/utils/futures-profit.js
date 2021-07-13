@@ -5,7 +5,7 @@ let filterProfit = (profit) =>
   profit.incomeType == "REFERRAL_KICKBACK" ||
   profit.incomeType == "COMMISSION_REBATE";
 const calculateFuturesProfit = async (futuresClient, params) => {
-  dayProfit = 0;
+  let dayProfit = 0;
   let profits = await futuresClient.futuresIncome(params);
   if (profits.code) {
     responseCommand = profits;
