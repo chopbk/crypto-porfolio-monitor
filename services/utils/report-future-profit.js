@@ -90,7 +90,9 @@ const reportFutureProfit = async (futuresApis, params = {}) => {
   responseCommand = `Thời gian: ${now.toLocaleTimeString()} ${now.toLocaleDateString()}`;
   responseCommand += `\nTổng lãi/lỗ từ ngày ${
     params.start
-  }: ${totalProfit.toFixed(3)}USDT Đóng họ:  ${(totalProfit*0.1).toFixed(3)} (10%)`;
+  }: ${totalProfit.toFixed(3)}USDT Đóng họ:  ${(totalProfit * 0.1).toFixed(
+    3
+  )} (10%)`;
   responseCommand += `\n${profit}`;
   return responseCommand;
 };

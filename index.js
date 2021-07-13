@@ -11,6 +11,7 @@ const telegramBotLoader = require("./loader/telegram.loader");
 const reportBalance = require("./services/utils/report-balance");
 const reportFutureProfit = require("./services/utils/report-future-profit");
 const { error } = require("winston");
+const { isBuffer } = require("lodash");
 
 const getExchangeById = (exchangeId, exchanges) => {
   let accountName = _.findKey(exchanges, { id: exchangeId });
@@ -47,7 +48,7 @@ const createBinanceFuturesApi = (configs) => {
   });
   return futuresApis;
 };
-let usernames = ["my", "an"];
+let username = process.env.ENV;
 let allTikers = {};
 let exchangeIds = [];
 let userExchanges = {};
@@ -56,14 +57,10 @@ let futuresApis = {};
 (async () => {
   try {
     await require("./loader/database.loader")();
-    let telegramBot = await telegramBotLoader("report");
+    let telegramBot = await telegramBotLoader(process.env.TELE);
     let userAccountConfigs = await loadAccountConfig([username]);
-    usernames.map((username) => {
-      userExchanges[username] = createCcxtExchange(
-        userAccountConfigs[username]
-      );
-    });
 
+    userExchanges = createCcxtExchange(userAccountConfigs[username]);
     futuresApis = createBinanceFuturesApi(userAccountConfigs[username]);
     //find name of exchange
     _.map(userExchanges, async (value, key) => {
@@ -86,34 +83,50 @@ let futuresApis = {};
       console.log(msg);
       telegramBot.sendReport(msg, "-1001497467742");
     };
-    const getFuturesProfit = async () => {
+    const getFuturesProfit = async (params, cmd = false) => {
       console.log("GET FUTURES PROFIT");
-      let msg = await reportFutureProfit(futuresApis);
-      console.log(msg);
-      telegramBot.sendReport(msg, "-1001497467742");
+      let msg = await reportFutureProfit(futuresApis, params);
+      if (cmd) telegramBot.sendReportCommand(msg, cmd);
+      else telegramBot.sendReport(msg, "-1001497467742");
     };
     // await getBalance();
     // await getFuturesProfit();
-    const job = schedule.scheduleJob("* /12 * * *", getBalance);
+    const job = schedule.scheduleJob("0 */8 * * *", getBalance);
     const job2 = schedule.scheduleJob("0 */2 * * *", getFuturesProfit);
-    const job3 = schedule.scheduleJob("58 6 * * *", getFuturesProfit);
+    const job3 = schedule.scheduleJob("59 23 * * *", getFuturesProfit);
     telegramBot.bot.on("message", async (msg) => {
       let messageText = msg.text || msg.caption;
       if (!messageText) return;
-      if (messageText == "balance") {
+      messageText = messageText.toLowerCase();
+      let commandParameter = messageText.split("?").join(" ").split(" ");
+      const params = Object.fromEntries(
+        new URLSearchParams(commandParameter[1])
+      );
+      for (const [key, value] of Object.entries(params)) {
+        params[key] = value.toLowerCase();
+      }
+      if (commandParameter[0] == "balance") {
         getBalance().catch((error) => {});
-      } else if (messageText == "profit") {
-        getFuturesProfit().catch((error) => {});
+      } else if (commandParameter[0] == "profit") {
+        getFuturesProfit(params).catch((error) => {});
       }
     });
     // maybe get more speed
     telegramBot.bot.on("channel_post", async (msg) => {
       let messageText = msg.text || msg.caption;
       if (!messageText) return;
-      if (messageText == "balance") {
-        getBalance().catch((error) => {});
-      } else if (messageText == "profit") {
-        getFuturesProfit().catch((error) => {});
+      messageText = messageText.toLowerCase();
+      let commandParameter = messageText.split("?").join(" ").split(" ");
+      const params = Object.fromEntries(
+        new URLSearchParams(commandParameter[1])
+      );
+      for (const [key, value] of Object.entries(params)) {
+        params[key] = value.toLowerCase();
+      }
+      if (commandParameter[0] == "balance") {
+        getBalance(msg).catch((error) => {});
+      } else if (commandParameter[0] == "profit") {
+        getFuturesProfit(params, msg).catch((error) => {});
       }
     });
   } catch (error) {

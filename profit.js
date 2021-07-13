@@ -71,7 +71,7 @@ let userAccountConfigs = {};
     const reportAllProfit = async (params, msg) => {
       for (const username of usernames) {
         await getFuturesProfit(futuresApis[username], telegramBot, params, msg);
-        await sleep(500);
+        await sleep(1000);
       }
     };
     const reportSchedule = async (params, msg) => {
